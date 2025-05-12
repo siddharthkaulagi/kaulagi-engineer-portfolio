@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { ChartLineUp, Cog, Search, Clipboard } from 'lucide-react';
+import { ChartLine, Cog, Search, Clipboard } from 'lucide-react';
 
 const About = () => {
   // Animation on scroll
@@ -44,7 +44,7 @@ const About = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
           <div className="card p-6 text-center hidden-element" style={{transitionDelay: '0.1s'}}>
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-portfolioAccent bg-opacity-20 text-portfolioAccent mb-4">
-              <ChartLineUp size={28} />
+              <ChartLine size={28} />
             </div>
             <h3 className="text-xl font-semibold mb-3">Process Optimization</h3>
             <p className="text-gray-600">Streamlining operations to maximize efficiency and minimize waste</p>
