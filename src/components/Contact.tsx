@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Phone, Linkedin } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -11,33 +13,106 @@ const Contact = () => {
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverStatus, setServerStatus] = useState('unknown');
   const { toast } = useToast();
+
+  // Check if backend is online
+  useEffect(() => {
+    const checkBackendStatus = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/health`, { 
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          setServerStatus('online');
+          console.log('Backend server is online');
+        } else {
+          setServerStatus('offline');
+          console.warn('Backend server returned an error');
+        }
+      } catch (error) {
+        setServerStatus('offline');
+        console.warn('Backend server is offline or unreachable');
+      }
+    };
+    
+    checkBackendStatus();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
+    // If backend is offline, use the fallback behavior
+    if (serverStatus === 'offline') {
+      setTimeout(() => {
+        toast({
+          title: "Message Sent (Demo Mode)",
+          description: "This is a demo. In production, your message would be sent via email.",
+        });
+        
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+        });
+        
+        setIsSubmitting(false);
+      }, 1500);
+      return;
+    }
+    
+    // Send to backend
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Message Sent!",
+          description: "Thank you for your message. I'll get back to you soon.",
+        });
+        
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
       toast({
-        title: "Message Sent!",
-        description: "Thank you for your message. I'll get back to you soon.",
+        title: "Connection Error",
+        description: "Could not connect to the server. Please try again later.",
+        variant: "destructive",
       });
-      
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: '',
-      });
-      
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   // Animation on scroll
@@ -111,6 +186,14 @@ const Contact = () => {
                 </div>
               </div>
             </div>
+            
+            {serverStatus === 'offline' && (
+              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-amber-700 text-sm">
+                  <strong>Note:</strong> Backend server is currently offline. Form submissions will work in demo mode.
+                </p>
+              </div>
+            )}
           </div>
           
           <div className="lg:col-span-3 hidden-element" style={{transitionDelay: '0.2s'}}>
